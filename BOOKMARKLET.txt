@@ -1,19 +1,21 @@
-LOLBeans runtime diagnostics — bookmarklet v2
-==============================================
+LOLBeans in-closure diagnostics — bookmarklet
+===============================================
 
-Your first report confirms that THREE and Ammo are global. This version performs a limited, read-only scan of objects reachable from window globals, looking for player/physics-related property names. It skips getters and does not change the game.
+The repository's lolbeans.js now exposes a read-only diagnostic function from inside the game's private closure:
+window.__lolbeansDiagnostics()
+
+IMPORTANT: editing this repository does not change the live code already served by lolbeans.io. This bookmarklet only works on a page where the patched lolbeans.js bundle has actually been loaded. If it says the hook is missing, the live page is still running the site's unpatched bundle.
 
 How to run:
-1. Copy the entire one-line bookmarklet below.
-2. Edit your browser bookmark and replace its URL/address field with the line.
-3. Save, open https://lolbeans.io/, and tap the bookmark.
-4. Copy the report JSON and send it back here.
+1. Load the patched lolbeans.js in the environment you are testing.
+2. Create/edit a browser bookmark and paste the one-line bookmarklet below into its URL/address field.
+3. Open that test page and activate the bookmark.
+4. Copy the JSON report and send it back here.
 
 Bookmarklet (one line):
-javascript:(()=>{try{document.getElementById('__lbdiag')?.remove();const names=Object.getOwnPropertyNames(window),rx=/player|players|scene|ammoBody|floorContact|rigidBody|physics|controller|world|game|input|velocity/i,skip=new Set(['window','document','THREE','__THREE__','Ammo','console','navigator','location','performance','localStorage','sessionStorage']),queue=[],seen=new WeakSet(),hits=[];for(const n of names){if(skip.has(n))continue;try{const d=Object.getOwnPropertyDescriptor(window,n);if(d&&Object.prototype.hasOwnProperty.call(d,'value')&&d.value&&(typeof d.value==='object'||typeof d.value==='function'))queue.push({path:n,v:d.value,depth:0})}catch(e){}}let count=0;while(queue.length&&count<1800){const x=queue.shift(),o=x.v;if(!o||(typeof o!=='object'&&typeof o!=='function')||seen.has(o))continue;try{if(o===window||o===document||o instanceof Node)continue}catch(e){}seen.add(o);count++;let keys;try{keys=Object.getOwnPropertyNames(o).slice(0,100)}catch(e){continue}const k=keys.filter(z=>rx.test(z));let score=0;for(const z of keys){if(z==='isPlayer')score+=5;if(z==='ammoBody')score+=7;if(z==='floorContact')score+=4;if(z==='getLinearVelocity')score+=3;if(z==='input')score+=1;if(/player/i.test(z))score+=1}if(score>=3||(/player|game|scene|world|physics|controller/i.test(x.path)&&k.length))hits.push({path:x.path,score,keys:k.slice(0,30)});if(x.depth>=2)continue;for(const z of keys){if(['constructor','prototype','caller','callee','arguments','__proto__'].includes(z))continue;try{const d=Object.getOwnPropertyDescriptor(o,z);if(!d||!Object.prototype.hasOwnProperty.call(d,'value'))continue;const v=d.value;if(v&&(typeof v==='object'||typeof v==='function')){let isNode=false;try{isNode=v instanceof Node}catch(e){}if(!isNode)queue.push({path:x.path+'.'+z,v,depth:x.depth+1})}}catch(e){}}}const report={url:location.href,globalCount:names.length,objectsInspected:count,candidateCount:hits.length,candidates:hits.slice(0,40)};console.info('LOLBeans runtime scan (read-only)',report);const p=document.createElement('div');p.id='__lbdiag';p.style.cssText='position:fixed;z-index:2147483647;inset:10px 10px auto;background:#101820;color:#fff;border:2px solid #58c4dd;border-radius:12px;padding:12px;max-height:75vh;overflow:auto;font:13px/1.45 monospace;white-space:pre-wrap;overflow-wrap:anywhere';const h=document.createElement('div'),t=document.createElement('b');t.textContent='LOLBeans runtime scan (read-only)';const c=document.createElement('button');c.textContent='Close';c.style.cssText='float:right;padding:6px';c.onclick=()=>p.remove();h.append(t,c);const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere';pre.textContent=JSON.stringify(report,null,2);const b=document.createElement('button');b.textContent='Copy report JSON';b.style.cssText='padding:8px;margin-top:8px';b.onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(report,null,2));b.textContent='Copied!'}catch(e){const ta=document.createElement('textarea');ta.value=JSON.stringify(report,null,2);ta.style.cssText='width:100%;height:100px';p.append(ta);ta.focus();ta.select();b.textContent='Select text and copy'}};p.append(h,pre,b);(document.body||document.documentElement).append(p)}catch(e){alert('Diagnostics error: '+e)}})()
+javascript:(()=>{try{document.getElementById('__lbdiag')?.remove();const fn=window.__lolbeansDiagnostics;if(typeof fn!=='function'){alert('LOLBeans diagnostic hook not found. The page must load the patched lolbeans.js from this repository; editing GitHub alone does not patch lolbeans.io.');return}const report=fn(),p=document.createElement('div');p.id='__lbdiag';p.style.cssText='position:fixed;z-index:2147483647;inset:10px 10px auto;background:#101820;color:#fff;border:2px solid #58c4dd;border-radius:12px;padding:12px;max-height:75vh;overflow:auto;font:13px/1.45 monospace;white-space:pre-wrap;overflow-wrap:anywhere';const h=document.createElement('div'),t=document.createElement('b');t.textContent='LOLBeans in-closure diagnostics (read-only)';const c=document.createElement('button');c.textContent='Close';c.style.cssText='float:right;padding:6px';c.onclick=()=>p.remove();h.append(t,c);const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere';pre.textContent=JSON.stringify(report,null,2);const b=document.createElement('button');b.textContent='Copy report JSON';b.style.cssText='padding:8px;margin-top:8px';b.onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(report,null,2));b.textContent='Copied!'}catch(e){const ta=document.createElement('textarea');ta.value=JSON.stringify(report,null,2);ta.style.cssText='width:100%;height:100px';p.append(ta);ta.focus();ta.select();b.textContent='Select text and copy'}};p.append(h,pre,b);(document.body||document.documentElement).append(p)}catch(e){alert('Diagnostics error: '+e)}})()
 
-Limitations:
-- The scan is bounded to avoid walking the whole game runtime.
-- Objects held only in private closures won't be discoverable from window globals.
-- A candidate is only a clue, not proof that it is the active player object.
-- Read-only diagnostics only; no movement or physics are modified.
+Scope:
+- Reports the local player, player list, positions, velocity, input flags, ground/flying flags, scene child count, camera position, and physics object count.
+- Read-only: does not change movement, inputs, or physics.
+- If the hook is missing, the currently loaded game bundle was not patched.
