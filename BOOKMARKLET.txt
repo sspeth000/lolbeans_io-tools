@@ -1,17 +1,21 @@
 LOLBeans diagnostics bookmarklet
 =================================
 
-1. Open LOLBeans in the browser and enter a game or a playable screen.
-2. Copy the entire one-line bookmarklet below.
-3. Create a browser bookmark and paste the code into its URL / address field.
-4. Tap the bookmark while the LOLBeans tab is active.
-5. The diagnostic panel appears on-screen. "Copy report JSON" copies the report; you can also inspect the browser console.
+The external-loader bookmarklet failed, so this version is self-contained. It does NOT load a second file or contact GitHub when you run it.
 
-Bookmarklet (one line):
-javascript:(()=>{const s=document.createElement('script');s.src='https://raw.githubusercontent.com/sspeth000/lolbeans_io-tools/main/diagnostics.js';s.onload=()=>console.info('LOLBeans diagnostics loaded');s.onerror=()=>alert('Could not load diagnostics.js. Check the file URL and browser network restrictions.');document.documentElement.appendChild(s)})()
+Setup:
+1. Copy the complete single line below, starting with javascript:
+2. Create a bookmark in your browser.
+3. Edit the bookmark and paste the line into its URL/address field. Save.
+4. Open LOLBeans, then tap the bookmark.
+5. A small report panel should appear. Use "Copy report JSON" to copy the findings.
 
-Notes:
-- diagnostics.js is read-only: it does not change movement, physics, or game state.
-- The scan is intentionally limited and skips getters; it may not find player internals if the game keeps them inside a closure.
-- This loads the latest file from the main branch. A browser or site policy may block bookmarklets or external scripts.
-- Only run code you trust.
+SELF-CONTAINED BOOKMARKLET (one line):
+javascript:(()=>{try{document.getElementById('__lbdiag')?.remove();const names=Object.getOwnPropertyNames(window),rx=/player|game|scene|ammo|physics|three|network|world|engine|camera|input|controller/i,interesting=names.filter(n=>rx.test(n)).slice(0,100),out={url:location.href,ready:document.readyState,canvases:document.querySelectorAll('canvas').length,globalCount:names.length,interestingGlobals:interesting,knownGlobals:{}};for(const n of ['THREE','Ammo','Module','scene','game','player','players','world','physics']){const d=Object.getOwnPropertyDescriptor(window,n);out.knownGlobals[n]=!d?'not a direct window property':Object.prototype.hasOwnProperty.call(d,'value')?(d.value===null?'null':typeof d.value+(typeof d.value==='object'?' keys='+Object.keys(d.value).slice(0,12).join(',') :'')):'accessor (not invoked)'}const p=document.createElement('div');p.id='__lbdiag';p.style.cssText='position:fixed;z-index:2147483647;inset:10px 10px auto;background:#101820;color:#fff;border:2px solid #58c4dd;border-radius:12px;padding:12px;max-height:75vh;overflow:auto;font:13px/1.45 monospace;white-space:pre-wrap;overflow-wrap:anywhere';const h=document.createElement('div'),t=document.createElement('b');t.textContent='LOLBeans diagnostics (read-only)';const c=document.createElement('button');c.textContent='Close';c.style.cssText='float:right;padding:6px';c.onclick=()=>p.remove();h.append(t,c);const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere';pre.textContent=JSON.stringify(out,null,2);const b=document.createElement('button');b.textContent='Copy report JSON';b.style.cssText='padding:8px;margin-top:8px';b.onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(out,null,2));b.textContent='Copied!'}catch(e){pre.focus();const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Report selected — copy manually'}};p.append(h,pre,b);(document.body||document.documentElement).append(p);console.info('LOLBeans diagnostics report',out)}catch(e){alert('Diagnostics error: '+e)}})()
+
+What it checks:
+- Page URL, ready state, and canvas count
+- Window globals with names related to game, player, physics, Three.js, Ammo, and input
+- Whether a few expected names are direct window properties (it does not invoke getters)
+
+This is a read-only diagnostic. It does not modify movement or physics. If tapping the bookmark still does nothing, the browser may be stripping or blocking javascript: bookmarks. Try creating/editing the bookmark on desktop and then syncing it to mobile.
