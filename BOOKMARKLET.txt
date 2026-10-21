@@ -1,0 +1,17 @@
+LOLBeans diagnostics bookmarklet
+=================================
+
+1. Open LOLBeans in the browser and enter a game or a playable screen.
+2. Copy the entire one-line bookmarklet below.
+3. Create a browser bookmark and paste the code into its URL / address field.
+4. Tap the bookmark while the LOLBeans tab is active.
+5. The diagnostic panel appears on-screen. "Copy report JSON" copies the report; you can also inspect the browser console.
+
+Bookmarklet (one line):
+javascript:(()=>{const s=document.createElement('script');s.src='https://raw.githubusercontent.com/sspeth000/lolbeans_io-tools/main/diagnostics.js';s.onload=()=>console.info('LOLBeans diagnostics loaded');s.onerror=()=>alert('Could not load diagnostics.js. Check the file URL and browser network restrictions.');document.documentElement.appendChild(s)})()
+
+Notes:
+- diagnostics.js is read-only: it does not change movement, physics, or game state.
+- The scan is intentionally limited and skips getters; it may not find player internals if the game keeps them inside a closure.
+- This loads the latest file from the main branch. A browser or site policy may block bookmarklets or external scripts.
+- Only run code you trust.
